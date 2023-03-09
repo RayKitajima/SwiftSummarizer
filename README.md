@@ -1,4 +1,4 @@
-# SwiftSummarizer
+# swift text-rank summarizing demo
 
 test program for [Reductio](https://github.com/RayKitajima/Reductio) text rank algorithm implementation.
 
