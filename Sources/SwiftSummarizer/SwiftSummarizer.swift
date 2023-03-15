@@ -4,8 +4,8 @@ import Reductio
 import SwiftSoup
 
 // usage: 
-// .build/debug/SwiftSummarizer https://example.com/news/1234 --target-size 1024 --timeout 5
-// .build/debug/SwiftSummarizer path/to/file.txt --target-size 1024 --timeout 5
+// .build/debug/SwiftSummarizer https://example.com/news/1234 --target-size 1024 --timeout 5 --maxIteration 200
+// .build/debug/SwiftSummarizer path/to/file.txt --target-size 1024 --timeout 5 --maxIteration 200
 
 @available(iOS 13.0.0, *)
 @available(macOS 10.15.0, *)
@@ -22,31 +22,35 @@ public struct SwiftSummarizer {
         return plain_text
     }
 
-	 public static func splitsentance(string: String) -> [String]{
-		let s = string
-		var r = [Range<String.Index>]()
-		let t = s.linguisticTags(
-			in: s.startIndex..<s.endIndex, scheme: NSLinguisticTagScheme.lexicalClass.rawValue,
-			options: [], tokenRanges: &r)
-		var result = [String]()
+	 public static func splitsentance(str: String) -> [String]{
+        var tokenRanges = [Range<String.Index>]()
+        let linguisticTags = str.linguisticTags(
+            in: str.startIndex ..< str.endIndex,
+            scheme: NSLinguisticTagScheme.lexicalClass.rawValue,
+            options: [],
+            tokenRanges: &tokenRanges
+        )
+        var result = [String]()
 
-		let ixs = t.enumerated().filter{
-			 $0.1 == "SentenceTerminator"
-		}.map {r[$0.0].lowerBound}
-		var prev = s.startIndex
-		for ix in ixs {
-			let r = prev...ix
-			result.append(
-				s[r].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
-			prev = ix
-		}
-		return result
+        let sentenceTerminatorsIndexes = linguisticTags.enumerated().filter {
+            $0.1 == "SentenceTerminator"
+        }.map { tokenRanges[$0.0].lowerBound }
+
+        var previousIndex = str.startIndex
+        for currentIndex in sentenceTerminatorsIndexes {
+            let sentenceRange = previousIndex ... currentIndex
+            result.append(
+                str[sentenceRange].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            )
+            previousIndex = currentIndex
+        }
+        return result
 	}
 
-    public static func reduceText(text: String, compression: Double, timeout: Double) async throws -> [String] {
+    public static func reduceText(text: String, compression: Double, timeout: Double, maxIteration: Int) async throws -> [String] {
         let reducedText = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
             let task = DispatchWorkItem {
-				Reductio.summarize(text: text, compression: Float(compression)) { phrases in
+				Reductio.summarize(text: text, maxIteration: maxIteration, compression: Float(compression)) { phrases in
                     continuation.resume(returning: phrases)
                 }
             }
@@ -59,10 +63,10 @@ public struct SwiftSummarizer {
         return reducedText
     }
     
-    public static func reduceText(text: String, count: Int, timeout: Double) async throws -> [String] {
+    public static func reduceText(text: String, count: Int, timeout: Double, maxIteration: Int) async throws -> [String] {
         let reducedText = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
             let task = DispatchWorkItem {
-				Reductio.summarize(text: text, count: Int(count)) { phrases in
+				Reductio.summarize(text: text, maxIteration: maxIteration, count: Int(count)) { phrases in
                     continuation.resume(returning: phrases)
                 }
             }
@@ -83,6 +87,7 @@ public struct SwiftSummarizer {
         let urlOrFile = arguments.count > 1 ? arguments[1] : nil
 		let targetSize: Int = arguments.count > 3 ? Int(arguments[3])! : 1024
         let timeout: Double = arguments.count > 5 ? Double(arguments[5])! : 5
+        let maxIteration: Int = arguments.count > 7 ? Int(arguments[7])! : 200
 
 		var contents: String
 
@@ -121,8 +126,7 @@ public struct SwiftSummarizer {
 			Darwin.exit(1)
         }
 		
-		// split to sentences
-		let sentences = SwiftSummarizer.splitsentance(string: contents)
+		let sentences = SwiftSummarizer.splitsentance(str: contents)
 		
 		// calculate mean sentence length, and use that to determine compression ratio for target size
         let compression = Double(targetSize) / Double(contents.count)
@@ -145,9 +149,12 @@ public struct SwiftSummarizer {
 		print("Timeout: \(timeout)")
 		print("")
 
-		// summarize
-		let reducedText = try! await SwiftSummarizer.reduceText(text: contents, count: targetSentenceCount, timeout: timeout)
-		print("Summarized:")
-		print(reducedText.joined(separator: " "))
+        do {
+            let reducedText = try await SwiftSummarizer.reduceText(text: contents, count: targetSentenceCount, timeout: timeout, maxIteration: maxIteration)
+            print("Summarized:")
+            print(reducedText.joined(separator: " "))
+        } catch {
+            print("Could not summarize text")
+        }
     }
 }

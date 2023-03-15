@@ -8,7 +8,8 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/RayKitajima/Reductio.git", from: "1.4.10"),
+		//.package(name: "Reductio", path: "../Reductio"),
+        .package(url: "https://github.com/RayKitajima/Reductio.git", from: "1.4.12"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.5.3")
     ],
     targets: [
@@ -19,6 +20,6 @@ let package = Package(
             dependencies: ["Reductio","SwiftSoup"]),
         .testTarget(
             name: "SwiftSummarizerTests",
-            dependencies: ["SwiftSummarizer"]),
+            dependencies: ["Reductio","SwiftSummarizer"]),
     ]
 )

@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RayKitajima/Reductio.git",
       "state" : {
-        "revision" : "e60bdc585cc3df930210c6d4dae239d5b75c5e5e",
-        "version" : "1.4.10"
+        "revision" : "d6e150c7cfbd49d1881e49af12a88f39e2efc789",
+        "version" : "1.4.12"
       }
     },
     {
