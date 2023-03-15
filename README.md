@@ -4,13 +4,13 @@ test program for [Reductio](https://github.com/RayKitajima/Reductio) text rank a
 
 ```bash
 $ swift build
-$ .build/debug/SwiftSummarizer <url-or-file-path> --target-size <int> --timeout <double>
+$ .build/debug/SwiftSummarizer <url-or-file-path> --target-size <int> --timeout <double> --maxIteration <int>
 ``` 
 
 example
 
 ```bash
-$ .build/debug/SwiftSummarizer https://www.theverge.com/2023/3/9/23629372/twitter-tumblr-livejournal-social-network --target-size 3096 --timeout 5
+$ .build/debug/SwiftSummarizer https://www.theverge.com/2023/3/9/23629372/twitter-tumblr-livejournal-social-network --target-size 3096 --timeout 10 --maxIteration 400
 ```
 
 License (MIT)
